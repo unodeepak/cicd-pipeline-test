@@ -1,55 +1,53 @@
-name: Build and Deploy React app
-
 on: 
   push:
     branches:
       - dev
 
-  env:
-    CI: false
+env:
+  CI: false
 
-  jobs:
-    build:
-      name: Build
-      run-on: ubuntu-latest
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: Checkout repo
-          uses: action/checkout@v3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-        - name: Setup Node
-          uses: actions/setup-node@v3
-          with: 
-            node-version: 20
-            cache: 'npm'
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with: 
+          node-version: 20
+          cache: 'npm'
 
-        - name: Install Dependency
-          run: npm install
+      - name: Install Dependencies
+        run: npm install
 
-        - name: Ready for production build file
-          uses: actions/upload-action@v3
-          with:
-            name: production ready file 
-            path: ./build
+      - name: Ready for production build file
+        run: npm run build
 
-    deploy:
-      name: Deploy
-      needs: build
-      runs-on: ubuntu-latest
-      if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Upload production-ready files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./build
 
-      steps:
-        - name: Download 
-          uses: actions/download-actifact@v3
-          with:
-            name: production-file
-            path: ./build
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
 
-        - name: Deploy on Github Action
-          uses: peaceiris/actions-gh-pages@v3
-          with:
-            github_token: ${{ secrets.TOKEN }}
-            public_dir: ./build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./build
 
-              
-          
+      - name: Deploy on GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
